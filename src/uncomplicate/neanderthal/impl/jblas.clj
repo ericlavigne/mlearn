@@ -113,7 +113,22 @@
                                       (block-vector-get x j))))
                               0.0 n-range)))))))
   (rank [_ alpha x y a] (unimplemented "matrix rank"))
-  (mm [_ alpha a b beta c] (unimplemented "matrix mm"))
+  (mm [_ alpha a b beta c]
+    (let [m (block-matrix-m a)
+          n (block-matrix-n a)
+          o (block-matrix-n b)
+          m-range (range m)
+          n-range (range n)
+          o-range (range o)]
+      (doseq [mi m-range
+              oi o-range]
+        (block-matrix-set c mi oi
+          (+ (* beta (block-matrix-get c mi oi))
+             (* alpha (reduce (fn [acc ni]
+                                (+ acc
+                                   (* (block-matrix-get a mi ni)
+                                      (block-matrix-get b ni oi))))
+                        0.0 n-range)))))))
   BLASPlus
     (subcopy [_ x y kx lx ky] (unimplemented "matrix subcopy"))
     (sum [_ x] (unimplemented "matrix sum"))

@@ -30,7 +30,13 @@
 (deftest mv-test
   (testing "matrix-vector multiplication"
     (is (= (*dv* 16 4 7)
-           (mv (*dge* 3 2 [1 4 2 3 0 1])
+           (mv
+             (*dge* 3 2 [1 4 2 3 0 1])
              (*dv* 1 5))))))
            
-    
+(deftest mm-test
+  (testing "matrix-matrix multiplication"
+    (is (= (*dge* 2 2 [11 9 10 14])
+           (mm
+             (*dge* 2 3 [1 4 3 0 2 1])
+             (*dge* 3 2 [1 0 5 3 1 2]))))))
