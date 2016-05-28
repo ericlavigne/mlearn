@@ -16,6 +16,14 @@
           (time
             (run-tests)))))))
 
+(defn matrix= [a b]
+  (and (= (ncols a) (ncols b))
+       (every?
+         #(< (Math/abs %) 0.001)
+         (map -
+           (flatten (seq a))
+           (flatten (seq b))))))
+
 (deftest ax-test
   (testing "scalar-matrix multiplication"
     (is (= (*dge* 3 2 [2 4 6 8 10 12])
@@ -36,7 +44,13 @@
            
 (deftest mm-test
   (testing "matrix-matrix multiplication"
-    (is (= (*dge* 2 2 [11 9 10 14])
-           (mm
-             (*dge* 2 3 [1 4 3 0 2 1])
-             (*dge* 3 2 [1 0 5 3 1 2]))))))
+    (is (matrix= (*dge* 2 2 [11 9 10 14])
+                 (mm
+                   (*dge* 2 3 [1 4 3 0 2 1])
+                   (*dge* 3 2 [1 0 5 3 1 2]))))
+    (is (matrix= (*dge* 4 3 [486   314   343.5   173
+                             410.4 341.6 353.4   285.2
+                             691.6 416.4 463.6   190.8])
+                 (mm
+                   (*dge* 4 2 [1 1 1 1 2104 1416 1534 852])
+                   (*dge* 2 3 [-40 0.25 200 0.1 -150 0.4]))))))
