@@ -33,42 +33,57 @@
   (sum [_ x] (unimplemented "vector sum"))
   (imax [_ x] (unimplemented "vector imax"))
   (imin [_ x] (unimplemented "vector imin")))
-  
 
-(defn block-m [b]
+(defn block-matrix-m [b]
   (if (= (.order b) COLUMN_MAJOR)
     (.stride b)
     (/ (.count b) (.stride b))))
   
-(defn block-n [b]
+(defn block-matrix-n [b]
   (if (= (.order b) ROW_MAJOR)
     (.stride b)
     (/ (.count b) (.stride b))))
 
-(defn block-index [b i j]
+(defn block-matrix-index [b i j]
   (let [col-order (= (.order b) COLUMN_MAJOR)]
     (+ (.offset b)
        (* (.stride b) (if col-order j i))
        (if col-order i j))))
 
-(defn block-get [b i j]
+(defn block-matrix-get [b i j]
   (.get double-accessor
         (.buffer b)
-        (block-index b i j)))
+        (block-matrix-index b i j)))
 
-(defn block-set [b i j val]
+(defn block-matrix-set [b i j val]
   (.set double-accessor (.buffer b)
-        (block-index b i j)
+        (block-matrix-index b i j)
         val))
+
+(defn block-vector-n [b]
+  (.count b))
+
+(defn block-vector-index [b i]
+  (+ (.offset b) i))
+
+(defn block-vector-get [b i]
+  (.get double-accessor
+    (.buffer b)
+    (block-vector-index b i)))
+
+(defn block-vector-set [b i val]
+  (.set double-accessor (.buffer b)
+    (block-vector-index b i)
+    val))
 
 (deftype DoubleGeneralMatrixEngine []
   BLAS
   (swap [_ x y] (unimplemented "matrix swap"))
   (copy [_ x y]
-    (doseq [i (range (block-m x))
-            j (range (block-n x))]
-      (block-set y i j
-        (block-get x i j))))
+    (doseq [i (range (block-matrix-m x))
+            j (range (block-matrix-n x))]
+      (block-matrix-set y i j
+        (block-matrix-get x i j))))
   (dot [_ x y] (unimplemented "matrix dot"))
   (nrm2 [_ x] (unimplemented "matrix nrm2"))
   (asum [_ x] (unimplemented "matrix asum"))
@@ -79,12 +94,24 @@
   (rotmg [_ p args] (unimplemented "matrix rotmg"))
   (scal [_ alpha x] (unimplemented "matrix scal"))
   (axpy [_ alpha x y]
-    (doseq [i (range (block-m x))
-            j (range (block-n x))]
-      (block-set y i j
-        (+ (block-get y i j)
-           (* alpha (block-get x i j))))))
-  (mv [_ alpha a x beta y] (unimplemented "matrix mv"))
+    (doseq [i (range (block-matrix-m x))
+            j (range (block-matrix-n x))]
+      (block-matrix-set y i j
+        (+ (block-matrix-get y i j)
+           (* alpha (block-matrix-get x i j))))))
+  (mv [_ alpha a x beta y]
+    (let [m (block-matrix-m a)
+          n (block-matrix-n a)
+          m-range (range m)
+          n-range (range n)]
+      (doseq [i m-range]
+        (block-vector-set y i
+          (+ (* beta (block-vector-get y i))
+             (* alpha (reduce (fn [acc j]
+                                (+ acc
+                                   (* (block-matrix-get a i j)
+                                      (block-vector-get x j))))
+                              0.0 n-range)))))))
   (rank [_ alpha x y a] (unimplemented "matrix rank"))
   (mm [_ alpha a b beta c] (unimplemented "matrix mm"))
   BLASPlus
