@@ -32,8 +32,8 @@
   (subcopy [_ x y kx lx ky] (unimplemented "vector subcopy"))
   (sum [_ x] (unimplemented "vector sum"))
   (imax [_ x] (unimplemented "vector imax"))
-  (imin [_ x] (unimplemented "vector imin"))
-  )
+  (imin [_ x] (unimplemented "vector imin")))
+  
 
 (defn block-m [b]
   (if (= (.order b) COLUMN_MAJOR)
@@ -64,7 +64,11 @@
 (deftype DoubleGeneralMatrixEngine []
   BLAS
   (swap [_ x y] (unimplemented "matrix swap"))
-  (copy [_ x y] (unimplemented "matrix copy"))
+  (copy [_ x y]
+    (doseq [i (range (block-m x))
+            j (range (block-n x))]
+      (block-set y i j
+        (block-get x i j))))
   (dot [_ x y] (unimplemented "matrix dot"))
   (nrm2 [_ x] (unimplemented "matrix nrm2"))
   (asum [_ x] (unimplemented "matrix asum"))
@@ -78,16 +82,17 @@
     (doseq [i (range (block-m x))
             j (range (block-n x))]
       (block-set y i j
-        (* alpha (block-get x i j)))))
+        (+ (block-get y i j)
+           (* alpha (block-get x i j))))))
   (mv [_ alpha a x beta y] (unimplemented "matrix mv"))
   (rank [_ alpha x y a] (unimplemented "matrix rank"))
   (mm [_ alpha a b beta c] (unimplemented "matrix mm"))
   BLASPlus
-  (subcopy [_ x y kx lx ky] (unimplemented "matrix subcopy"))
-  (sum [_ x] (unimplemented "matrix sum"))
-  (imax [_ x] (unimplemented "matrix imax"))
-  (imin [_ x] (unimplemented "matrix imin"))
-  )
+    (subcopy [_ x y kx lx ky] (unimplemented "matrix subcopy"))
+    (sum [_ x] (unimplemented "matrix sum"))
+    (imax [_ x] (unimplemented "matrix imax"))
+    (imin [_ x] (unimplemented "matrix imin")))
+  
   
 (deftype JblasFactory [^DataAccessor acc ^BLAS vector-eng ^BLAS matrix-eng]
   Factory
