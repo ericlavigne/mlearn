@@ -1,6 +1,6 @@
-(ns mlearn.week1-test
+(ns mlearn.regression-test
   (:require [clojure.test :refer :all]
-            [mlearn.week1 :refer :all]))
+            [mlearn.regression :refer :all]))
 
 (deftest model-tests
   (testing "Evaluate polynomial h(x) = 1.0 + 0.5x"

@@ -1,5 +1,8 @@
-(ns mlearn.week1
-  (:use [uncomplicate.neanderthal core math native]))
+(ns mlearn.regression
+  (:require [mlearn.matrix :refer :all]
+            [uncomplicate.neanderthal.core :refer [axpy mm trans]]
+            [uncomplicate.neanderthal.math :refer [pow]]
+            [uncomplicate.neanderthal.native :refer :all]))
 
 (defn powers
   "(powers x n) -> [x^0 x^1 x^2 ... x^(n-1)]"
@@ -13,9 +16,6 @@
   [x thetas]
   (let [x-powers (powers x (count thetas))]
     (apply + (map * thetas x-powers))))
-
-(defn matrix-sum [matrix]
-  (apply + (flatten (seq matrix))))
 
 (defn create-cost-function
   "Returns cost function J(thetas) = average((h(x) - y)^2)/2"
@@ -33,5 +33,5 @@
                 (dge 1 count-thetas thetas)
                 x-matrix)
             diff (axpy -1 h y-matrix)
-            diff-squared (matrix-sum (mm diff (trans diff)))]
+            diff-squared (dot diff diff)]
         (* one-over-2m diff-squared)))))
