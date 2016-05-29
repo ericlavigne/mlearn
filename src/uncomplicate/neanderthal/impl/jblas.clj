@@ -137,6 +137,9 @@
   
   
 (deftype JblasFactory [^DataAccessor acc ^BLAS vector-eng ^BLAS matrix-eng]
+  DataAccessorProvider
+  (data-accessor [_]
+    acc)
   Factory
   (create-vector [this n buf _]
     (if (and (<= 0 (long n) (.count acc buf))
@@ -155,11 +158,9 @@
       (throw (IllegalArgumentException.
               (format "I do not know how to create a %dx%d matrix from %s."
                       m n (type buf))))))
-  (data-accessor [_]
-    acc)
-  (vector-engine [_ _] ; Takes one arg in 0.6
+  (vector-engine [_]
     vector-eng)
-  (matrix-engine [_ _] ; Takes one arg in 0.6
+  (matrix-engine [_]
     matrix-eng))
   
 (def jblas-double

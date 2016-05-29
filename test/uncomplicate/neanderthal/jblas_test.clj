@@ -8,7 +8,9 @@
 (use-fixtures :once
   (fn [run-tests]
     (let [implementations [{:name "Native" :dge dge :dv dv}
+                           ;{:name "GPU" :dge clge :dv clv}
                            {:name "Java" :dge dge-j :dv dv-j}]]
+                           
       (doseq [implementation implementations]
         (binding [*dge* (:dge implementation)
                   *dv* (:dv implementation)]
@@ -23,6 +25,11 @@
          (map -
            (flatten (seq a))
            (flatten (seq b))))))
+
+(defn random-seq [n]
+  (vec (map
+         (fn [i] (- (rand 2) 1))
+         (range n))))
 
 (deftest ax-test
   (testing "scalar-matrix multiplication"
@@ -54,3 +61,26 @@
                  (mm
                    (*dge* 4 2 [1 1 1 1 2104 1416 1534 852])
                    (*dge* 2 3 [-40 0.25 200 0.1 -150 0.4]))))))
+
+
+(def random-matrix-multiplication-example
+  (let [m 32
+        n 32
+        o 32
+        a (random-seq (* m n))
+        b (random-seq (* n o))
+        a-mat (dge m n a)
+        b-mat (dge n o b)
+        c-mat (mm a-mat b-mat)
+        c (vec (flatten (seq c-mat)))]
+    {:a a :b b :c c :m m :n n :o o}))
+
+(deftest random-matrix-multiplication-test
+  (testing "multiply two large (256x256) matrices"
+    (let [m (:m random-matrix-multiplication-example)
+          n (:n random-matrix-multiplication-example)
+          o (:o random-matrix-multiplication-example)]
+      (is (matrix= (*dge* m o (:c random-matrix-multiplication-example))
+            (mm
+              (*dge* m n (:a random-matrix-multiplication-example))
+              (*dge* n o (:b random-matrix-multiplication-example))))))))
