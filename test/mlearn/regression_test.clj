@@ -20,4 +20,6 @@
       (is (= [0.0 0.0] (derivative correct-model)))
       (is (< 0
             (cost close-model)
-            (cost far-model))))))
+            (cost far-model)))
+      (let [regression-model (time (polynomial-gradient-descent data 2 0.001))]
+        (is (< (cost regression-model) 0.001))))))

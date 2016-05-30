@@ -52,3 +52,40 @@
              derivative))
          (scal! one-over-m derivative)
          (vec (seq derivative))))}))
+
+(defn polynomial-gradient-descent [xy-pairs num-terms tolerance]
+  (let [cost (create-polynomial-cost-function xy-pairs num-terms)
+        cost-fn (:cost cost)
+        cost-derivative-fn (:cost-derivative cost)
+        initial-theta (repeat num-terms 0.0)
+        derivative-zero (repeat num-terms 0.0)
+        initial-alpha (repeat num-terms 1.0)
+        initial-cost (cost-fn initial-theta)
+        initial-derivative (cost-derivative-fn initial-theta)]
+    (loop [theta initial-theta
+           prev-derivative derivative-zero
+           alpha initial-alpha
+           cost initial-cost
+           derivative initial-derivative]
+      (let [new-alpha (map (fn [d1 d2 a] (if (> (* d1 d2) 0)
+                                           (* a 1.2)
+                                           (* a 0.8)))
+                        prev-derivative
+                        derivative
+                        alpha)
+            new-theta (map (fn [th a d]
+                             (- th (* a d)))
+                        theta new-alpha derivative)
+            new-cost (cost-fn new-theta)]
+        ;(println (str "alpha " (vec alpha) " cost " cost " theta " (vec theta)))
+        (if (> new-cost cost)
+          (recur
+            theta prev-derivative
+            (map #(* 0.2 %) alpha)
+            cost derivative)
+          (let [new-derivative (cost-derivative-fn new-theta)]
+            (if (> tolerance (apply max (map #(Math/abs %) new-derivative)))
+              new-theta
+              (recur new-theta derivative new-alpha new-cost new-derivative))))))))
+              
+              
