@@ -44,14 +44,8 @@
                  (dge 1 count-thetas thetas)
                  x-matrix)
              diff (axpy -1 y-matrix h)
-             derivative (dv count-thetas)]
-         (doseq [i (range sample-size)]
-           (axpy!
-             (entry diff 0 i)
-             (col x-matrix i)
-             derivative))
-         (scal! one-over-m derivative)
-         (vec (seq derivative))))}))
+             derivative (mm one-over-m x-matrix (trans diff))]
+         (vec (seq (col derivative 0)))))}))
 
 (defn polynomial-gradient-descent [xy-pairs num-terms tolerance]
   (let [cost (create-polynomial-cost-function xy-pairs num-terms)
