@@ -30,41 +30,32 @@
         x-matrix (dge count-thetas sample-size x-powers)
         one-over-m (/ 1.0 sample-size)
         one-over-2m (/ 0.5 sample-size)]
-    {:cost
-     (fn [thetas]
-       (let [h (mm
-                 (dge 1 count-thetas thetas)
-                 x-matrix)
-             diff (axpy -1 y-matrix h)
-             diff-squared (dot diff diff)]
-         (* one-over-2m diff-squared)))
-     :cost-derivative
-     (fn [thetas]
-       (let [h (mm
-                 (dge 1 count-thetas thetas)
-                 x-matrix)
-             diff (axpy -1 y-matrix h)
-             derivative (mm one-over-m x-matrix (trans diff))]
-         (vec (seq (col derivative 0)))))}))
+    (fn [thetas]
+      (let [h (mm
+                (dge 1 count-thetas thetas)
+                x-matrix)
+            diff (axpy -1 y-matrix h)
+            diff-squared (dot diff diff)
+            derivative (mm one-over-m x-matrix (trans diff))]
+        {:cost (* one-over-2m diff-squared)
+         :derivative (vec (seq (col derivative 0)))}))))
 
 (defn polynomial-gradient-descent
   "Uses bold driver to optimize alpha. Will try adding momentum later.
    https://www.willamette.edu/~gorr/classes/cs449/momrate.html"
   [xy-pairs num-terms tolerance]
-  (let [cost (create-polynomial-cost-function xy-pairs num-terms)
-        cost-fn (:cost cost)
-        cost-derivative-fn (:cost-derivative cost)
-        initial-theta (repeat num-terms 0.0)]
+  (let [cost-fn (create-polynomial-cost-function xy-pairs num-terms)
+        initial-theta (repeat num-terms 0.0)
+        {initial-cost :cost initial-derivative :derivative} (cost-fn initial-theta)]
     (loop [i 0
-           cost (cost-fn initial-theta)
-           derivative (cost-derivative-fn initial-theta)
+           cost initial-cost
+           derivative initial-derivative
            theta initial-theta
            alpha 1.0]
       (let [new-theta (map (fn [th d]
                              (- th (* alpha d)))
                         theta derivative)
-            new-cost (cost-fn new-theta)
-            new-derivative (cost-derivative-fn new-theta)
+            {new-cost :cost new-derivative :derivative} (cost-fn new-theta)
             worse (> new-cost cost)
             new-alpha (* alpha (if worse 0.5 1.1))
             largest-derivative-change (apply max (map #(Math/abs %) new-derivative))]
