@@ -47,39 +47,31 @@
              derivative (mm one-over-m x-matrix (trans diff))]
          (vec (seq (col derivative 0)))))}))
 
-(defn polynomial-gradient-descent [xy-pairs num-terms tolerance]
+(defn polynomial-gradient-descent
+  "Uses bold driver to optimize alpha. Will try adding momentum later.
+   https://www.willamette.edu/~gorr/classes/cs449/momrate.html"
+  [xy-pairs num-terms tolerance]
   (let [cost (create-polynomial-cost-function xy-pairs num-terms)
         cost-fn (:cost cost)
         cost-derivative-fn (:cost-derivative cost)
-        initial-theta (repeat num-terms 0.0)
-        derivative-zero (repeat num-terms 0.0)
-        initial-alpha (repeat num-terms 1.0)
-        initial-cost (cost-fn initial-theta)
-        initial-derivative (cost-derivative-fn initial-theta)]
-    (loop [theta initial-theta
-           prev-derivative derivative-zero
-           alpha initial-alpha
-           cost initial-cost
-           derivative initial-derivative]
-      (let [new-alpha (map (fn [d1 d2 a] (if (> (* d1 d2) 0)
-                                           (* a 1.2)
-                                           (* a 0.8)))
-                        prev-derivative
-                        derivative
-                        alpha)
-            new-theta (map (fn [th a d]
-                             (- th (* a d)))
-                        theta new-alpha derivative)
-            new-cost (cost-fn new-theta)]
-        ;(println (str "alpha " (vec alpha) " cost " cost " theta " (vec theta)))
-        (if (> new-cost cost)
-          (recur
-            theta prev-derivative
-            (map #(* 0.2 %) alpha)
-            cost derivative)
-          (let [new-derivative (cost-derivative-fn new-theta)]
-            (if (> tolerance (apply max (map #(Math/abs %) new-derivative)))
+        initial-theta (repeat num-terms 0.0)]
+    (loop [i 0
+           cost (cost-fn initial-theta)
+           derivative (cost-derivative-fn initial-theta)
+           theta initial-theta
+           alpha 1.0]
+      (let [new-theta (map (fn [th d]
+                             (- th (* alpha d)))
+                        theta derivative)
+            new-cost (cost-fn new-theta)
+            new-derivative (cost-derivative-fn new-theta)
+            worse (> new-cost cost)
+            new-alpha (* alpha (if worse 0.5 1.1))
+            largest-derivative-change (apply max (map #(Math/abs %) new-derivative))]
+        (println (str i ") alpha " alpha " cost " cost " theta " (vec theta)
+                   " derivative " (vec derivative)))
+        (if worse
+          (recur (inc i) cost derivative theta new-alpha)
+          (if (< largest-derivative-change tolerance)
               new-theta
-              (recur new-theta derivative new-alpha new-cost new-derivative))))))))
-              
-              
+              (recur (inc i) new-cost new-derivative new-theta new-alpha)))))))
